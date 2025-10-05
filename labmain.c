@@ -113,11 +113,33 @@ static void start_sequence(void) {
 /* ---------------------- ISR ----------------------------- */
 void handle_interrupt(unsigned cause)
 {
-  (void)cause;  // not used; boot.S always passes 11 for external IRQs
+  /* --- External interrupt from GPIO PIO (Button0) --- */
+  if (cause == EXT_CAUSE_BUTTON0 || cause == GENERIC_EXT_CAUSE) {
+    unsigned ec = *BTN_EDGECAP;          
+    if (ec & 0x1u) {                      // bit 0 is Button0
+      
+      if ((*BTN_DATA & 0x1u) != 0u) {
+        unsigned sec_bcd =  (unsigned)( mytime        & 0xFFu);
+        unsigned min_bcd =  (unsigned)((mytime >> 8)  & 0xFFu);
+        unsigned seconds  = ((sec_bcd >> 4) * 10u) + (sec_bcd & 0xFu);
+        unsigned minutes  = ((min_bcd >> 4) * 10u) + (min_bcd & 0xFu);
+        unsigned total    = minutes * 60u + seconds;
+        if (total + 2u >= 3600u) {        // MM:SS will wrap to 00:00 => bump hours
+          isr_hours = (isr_hours + 1u) % 100u;
+        }
+        // +2 seconds = reuse tick() twice
+        tick(&mytime);
+        tick(&mytime);
+      }
+      *BTN_EDGECAP = 0x1u;               
+    }
+    return;                             
+  }
 
-  /* --- Service TIMER (same external line as GPIO) --- */
+  
   if (*STATUS & STATUS_TO) {
-    *STATUS = STATUS_TO;  // write-1-to-clear
+    *STATUS = STATUS_TO;
+
     if (++isr_timeoutcount >= 10) {
       isr_timeoutcount = 0;
 
@@ -127,6 +149,7 @@ void handle_interrupt(unsigned cause)
       unsigned minutes  = ((min_bcd >> 4) * 10u) + (min_bcd & 0xFu);
 
       show_time_on_displays((int)isr_hours, (int)minutes, (int)seconds);
+
       tick(&mytime);
 
       if (seconds == 0 && minutes == 0) {
@@ -134,27 +157,7 @@ void handle_interrupt(unsigned cause)
       }
     }
   }
-
-  /* --- Service GPIO button (edgecapture is W1C) --- */
-  unsigned ec = *BTN_EDGECAP;
-  if (ec & 0x1u) {                 // bit 0 is Button0
-    if ((*BTN_DATA & 0x1u) != 0u) {
-      unsigned sec_bcd =  (unsigned)( mytime        & 0xFFu);
-      unsigned min_bcd =  (unsigned)((mytime >> 8)  & 0xFFu);
-      unsigned seconds  = ((sec_bcd >> 4) * 10u) + (sec_bcd & 0xFu);
-      unsigned minutes  = ((min_bcd >> 4) * 10u) + (min_bcd & 0xFu);
-      unsigned total    = minutes * 60u + seconds;
-
-      if (total + 2u >= 3600u) {
-        isr_hours = (isr_hours + 1u) % 100u;
-      }
-      tick(&mytime);
-      tick(&mytime);
-    }
-    *BTN_EDGECAP = 0x1u;           // clear edge
-  }
 }
-
 
 /* ---------------------- Init ------------------------------ */
 void labinit(void) {
@@ -182,3 +185,5 @@ int main(void) {
     print("\n");
   }
 }
+
+// changes mare 
