@@ -1,3 +1,4 @@
+
 #define STOP_AFTER_START_SEQUENCE 0
 
 #include <stdint.h>
@@ -167,8 +168,8 @@ void labinit(void) {
   *CONTROL = CONTROL_CONT | CONTROL_ITO | CONTROL_START;
 
   
-  BTN_INTMASK = 0x1u;        
-  BTN_EDGECAP = 0xFFFFFFFFu; 
+  *BTN_INTMASK = 0x1u;        
+  *BTN_EDGECAP = 0xFFFFFFFFu; 
 
   enable_interrupt();
 }
@@ -185,44 +186,3 @@ int main(void) {
     print("\n");
   }
 }
-// changed today
-/*When the time-out event flag is “1”, how do you reset it to “0”?
-Write to the timer’s acknowledge/clear register (or status bit) as specified by the timer docs. In practice this means: after detecting the flag in your ISR, acknowledge the interrupt by clearing the timer’s event/interrupt-pending bit (often “write-1-to-clear”). This lets the timer raise the next event. 
-
-lab3-io-359e31c4-5d12-44bf-8f92…
-
-What happens if you don’t reset it? Why?
-If you don’t clear the flag, the timer remains “event pending,” so no new time-outs will be registered (or you’ll re-enter the ISR immediately depending on the hardware). Either way, your clock stops behaving correctly because the device won’t generate further distinct events. 
-
-lab3-io-359e31c4-5d12-44bf-8f92…
-
-From where is handle_interrupt called, and why from there?
-It’s called from the interrupt/trap entry code in boot.S (the low-level ISR stub). When the timer asserts an interrupt, the CPU vectors to the trap handler, which saves context and then calls your C-level ISR (handle_interrupt). That’s the only safe place to run interrupt code because it executes in interrupt context and has the saved machine state needed to return correctly. 
-
-lab3-io-359e31c4-5d12-44bf-8f92…
-
-Why are registers saved before calling handle_interrupt?
-Because the CPU was asynchronously interrupted in the middle of other code. Saving registers preserves the interrupted program’s state (PC and general registers) so your ISR can freely use registers; then the handler can restore them and return to the exact point of interruption without corrupting execution. 
-
-lab3-io-359e31c4-5d12-44bf-8f92…
-
-Which device registers and which processor registers must be written to enable timer interrupts? What do they do?
-
-Device (Timer) side:
-
-Load/period register(s): set the timeout period (e.g., to get 100 ms at 30 MHz).
-
-Control/enable register: turn the timer on and enable its interrupt generation.
-
-Status/ack register: used later to clear the event flag inside the ISR.
-(The timer is memory-mapped at 0x04000020–0x0400003F; exact bit fields are in the timer’s doc referenced by the lab.) 
-
-lab3-io-359e31c4-5d12-44bf-8f92…
-
-Processor (RISC-V) side:
-
-Global interrupt enable (e.g., set mstatus.MIE) to allow interrupts at all.
-
-Enable the timer’s interrupt source in the CPU/platform interrupt enables (e.g., the relevant bit in mie and, if applicable, the platform interrupt controller’s per-source enable/priority).
-These are done in your added enable_interrupt routine in boot.S and in labinit when you “allow interrupts from the timer” and enable the timer to generate them.
-*/

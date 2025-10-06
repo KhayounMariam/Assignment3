@@ -123,7 +123,7 @@ loop:
 
 enable_interrupt:
     
-    
+    csrsi mie, 18 
     csrsi mie, 16
 	csrsi mstatus,3 
 	
