@@ -40,8 +40,8 @@
 #define CONTROL_STOP  (1u << 3)
 
 /* ---------------------- External causes --------------------------- */
-#define EXT_CAUSE_BUTTON0  18u   
-#define GENERIC_EXT_CAUSE  11u   
+//#define EXT_CAUSE_BUTTON0  18u   
+//#define GENERIC_EXT_CAUSE  11u   
 
 /* ---------------------- Globals used by ISR ----------------------- */
 static volatile unsigned isr_hours = 0;         // 0..99, shown on left two 7-seg digits
@@ -114,7 +114,7 @@ static void start_sequence(void) {
 void handle_interrupt(unsigned cause)
 {
   /* --- External interrupt from GPIO PIO (Button0) --- */
-  if (cause == EXT_CAUSE_BUTTON0 || cause == GENERIC_EXT_CAUSE) {
+  /*if (cause == EXT_CAUSE_BUTTON0 || cause == GENERIC_EXT_CAUSE) {
     unsigned ec = *BTN_EDGECAP;          
     if (ec & 0x1u) {                      // bit 0 is Button0
       
@@ -134,7 +134,7 @@ void handle_interrupt(unsigned cause)
       *BTN_EDGECAP = 0x1u;               
     }
     return;                             
-  }
+  }*/
 
   
   if (*STATUS & STATUS_TO) {
@@ -167,8 +167,8 @@ void labinit(void) {
   *CONTROL = CONTROL_CONT | CONTROL_ITO | CONTROL_START;
 
   
-  *BTN_INTMASK = 0x1u;        
-  *BTN_EDGECAP = 0xFFFFFFFFu; 
+  //*BTN_INTMASK = 0x1u;        
+  //*BTN_EDGECAP = 0xFFFFFFFFu; 
 
   enable_interrupt();
 }
@@ -185,5 +185,4 @@ int main(void) {
     print("\n");
   }
 }
-
-// changes mare 
+// changed today
